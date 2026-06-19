@@ -24,9 +24,9 @@
       --card: rgba(47, 58, 139, 0.88);
       --shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
       --radius: 22px;
-      --hour-height: 62px;
+      --hour-height: 40px;
       --time-col: 78px;
-      --critter-col: minmax(102px, 1fr);
+      --critter-col: minmax(86px, 96px);
       --slot-colour: #8b6be2;
       --slot-colour-dark: #714fbd;
       --top-offset: 83px;
@@ -48,6 +48,7 @@
       margin: 0;
       min-height: 100vh;
       color: var(--text);
+      background:#18236f;
       background:
         radial-gradient(circle at 20% 0%,
           rgba(122, 91, 214, 0.65),
@@ -105,9 +106,8 @@
       padding: 28px 0 14px;
       display: flex;
       flex-direction: column;
-      height: 100vh;
-      max-height: 100vh;
-      min-height: 0;
+      height: auto;
+      min-height: 100vh;
     }
 
     .topbar {
@@ -261,11 +261,9 @@
       flex: 1 1 auto;
       min-height: 0;
       border: 1px solid rgba(201, 212, 255, 0.22);
-      background: linear-gradient(
-        180deg,
-        rgba(24, 32, 101, 0.92),
-        rgba(14, 22, 76, 0.88)
-      );
+      background: linear-gradient(180deg,
+          rgba(24, 32, 101, 0.92),
+          rgba(14, 22, 76, 0.88));
       border-radius: var(--radius);
       box-shadow:
         var(--shadow),
@@ -286,7 +284,7 @@
     .schedule-grid {
       position: relative;
       display: grid;
-      grid-template-rows: 42px 42px calc(var(--hour-height) * 24);
+      grid-template-rows: auto auto calc(var(--hour-height) * 24);
       min-width: 900px;
     }
 
@@ -350,6 +348,13 @@
       font-size: 13px;
       line-height: 1.15;
       color: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+
+      & .header-label {
+        text-align: center;
+      }
     }
 
     .location-header .header-icon {
@@ -377,7 +382,7 @@
 
     .time-axis {
       position: absolute;
-      top: 84px;
+      bottom: 8px;
       left: 0;
       z-index: 60;
       width: var(--time-col);
@@ -414,18 +419,18 @@
 
     .critter-slot {
       position: absolute;
-      left: 7px;
-      right: 7px;
-      min-height: 74px;
-      border-radius: 13px;
+      left: 4px;
+      right: 4px;
+      min-height: 66px;
+      border-radius: 11px;
       background: linear-gradient(180deg,
           color-mix(in srgb, var(--slot-colour) 88%, rgba(0, 0, 0, 0.1) 12%),
           color-mix(in srgb, var(--slot-colour-dark) 92%, rgba(0, 0, 0, 0.1) 100%));
       border: 1px solid color-mix(in srgb, var(--slot-colour) 58%, white 42%);
       box-shadow:
-        0 14px 26px rgba(0, 0, 0, 0.22),
+        0 10px 20px rgba(0, 0, 0, 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.2),
-        0 0 16px color-mix(in srgb, var(--slot-colour) 38%, transparent);
+        0 0 12px color-mix(in srgb, var(--slot-colour) 32%, transparent);
       overflow: hidden;
       transition:
         background 0.25s ease,
@@ -434,35 +439,32 @@
     }
 
     .critter-card {
-      position: sticky;
-      top: 10px;
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
       width: 100%;
-      padding: 8px 7px 9px;
+      padding: 7px 5px 8px;
       color: #fff;
       border: 0;
       background: transparent;
       cursor: pointer;
-    }
-
-    .critter-card:hover .critter-name {
-      color: var(--gold);
+      transform: translateY(var(--sticky-y, 0px));
+      will-change: transform;
     }
 
     .critter-img {
-      width: 62px;
-      height: 52px;
+      width: 52px;
+      height: 43px;
       object-fit: contain;
-      filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.34));
+      filter: drop-shadow(0 7px 7px rgba(0, 0, 0, 0.34));
     }
 
     .critter-name {
       font-weight: 900;
-      font-size: 13px;
-      line-height: 1.08;
+      font-size: 11px;
+      line-height: 1.06;
       text-align: center;
       transition: color 0.15s ease;
     }
@@ -473,9 +475,13 @@
       gap: 2px;
       align-items: center;
       color: #fffbe9;
-      font-size: 11px;
-      line-height: 1.1;
+      font-size: 9px;
+      line-height: 1.08;
       text-align: center;
+    }
+
+    .critter-card:hover .critter-name {
+      color: var(--gold);
     }
 
     .method {
@@ -748,7 +754,7 @@
 
     @media (max-width: 900px) {
       :root {
-        --hour-height: 54px;
+        --hour-height: 40px;
         --time-col: 62px;
       }
 
@@ -808,7 +814,7 @@
 
       .schedule-grid {
         min-width: 720px;
-        grid-template-rows: 38px 44px calc(var(--hour-height) * 24);
+        grid-template-rows: auto auto calc(var(--hour-height) * 24);
       }
 
       .area-header {
@@ -904,12 +910,12 @@
     </section>
     <div class="footer-actions">
       <button class="hidden-button" id="openHiddenButton" type="button">
-        ⊘ Hidden Critters <span id="hiddenCount">0</span>
+        ⊘ Obtained Critters <span id="hiddenCount">0</span>
       </button>
     </div>
 
     <p class="note">
-      Schedule resets daily at 12:00 AM local time. Hidden critters are
+      Schedule resets daily at 12:00 AM local time. Obtained critters are
       remembered in this browser for 30 days.
     </p>
   </main>
@@ -927,7 +933,7 @@
   <div class="modal-backdrop" id="hiddenModal" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="hiddenModalTitle">
       <div class="modal-header">
-        <h2 class="modal-title" id="hiddenModalTitle">Hidden Critters</h2>
+        <h2 class="modal-title" id="hiddenModalTitle">Obtained Critters</h2>
         <button class="close-button" type="button" data-close-modal>×</button>
       </div>
       <div class="modal-body" id="hiddenModalBody"></div>

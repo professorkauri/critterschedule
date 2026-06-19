@@ -104,11 +104,13 @@ function init() {
   updateHiddenButton();
 
   els.openHiddenButton.addEventListener("click", openHiddenModal);
-  els.scheduleScroll.addEventListener("scroll", syncScheduleOverlays);
-  window.addEventListener("resize", () => {
-    updateCurrentTimeLine();
+  els.scheduleScroll.addEventListener("scroll", () => {
     syncScheduleOverlays();
+    updateStickyCritterCards();
   });
+  
+  window.addEventListener("scroll", updateStickyCritterCards, { passive: true });
+  window.addEventListener("resize", updateStickyCritterCards);
   document.addEventListener("click", handleDocumentClick);
   document.addEventListener("keydown", handleKeydown);
 
@@ -154,10 +156,11 @@ function renderSchedule() {
       ${html}
       <div class="empty-state" style="grid-column: 2; grid-row: 1 / 4;">
         ✦ No remaining critters for ${DAY_LABELS[state.activeDay]}. ✦<br />
-        Check Hidden Critters if you marked one by accident.
+        Check Obtained Critters if you marked one by accident.
       </div>
     `;
     renderScheduleOverlays();
+    updateStickyCritterCards();
     return;
   }
 
@@ -237,6 +240,24 @@ function renderLane(lane, col) {
   return `<div class="column-lane" style="grid-column:${col};">${slotHtml}</div>`;
 }
 
+function updateStickyCritterCards() {
+  const stickyTop = 12;
+
+  els.scheduleGrid.querySelectorAll(".critter-slot").forEach((slot) => {
+    const card = slot.querySelector(".critter-card");
+    if (!card) return;
+
+    const slotRect = slot.getBoundingClientRect();
+    const cardHeight = card.offsetHeight;
+    const maxY = Math.max(0, slot.offsetHeight - cardHeight);
+
+    const rawY = stickyTop - slotRect.top;
+    const y = Math.min(Math.max(rawY, 0), maxY);
+
+    card.style.setProperty("--sticky-y", `${y}px`);
+  });
+}
+
 function renderTimeLabels() {
   const labels = [];
   for (let hour = 0; hour <= 24; hour += 2) {
@@ -276,12 +297,23 @@ function updateCurrentTimeLine() {
 
   const now = new Date();
   const minutes = now.getHours() * 60 + now.getMinutes();
-  const headerHeight = 84;
-  const bodyHeight = els.scheduleGrid.offsetHeight - headerHeight;
-  const top = headerHeight + (bodyHeight * (minutes / 1440));
 
-  line.style.top = `${top}px`;
-  label.textContent = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const styles = getComputedStyle(document.documentElement);
+  const hourHeight = parseFloat(styles.getPropertyValue("--hour-height")) || 40;
+  const dayHeight = hourHeight * 24;
+
+  const scheduleBottomOffset =
+    parseFloat(getComputedStyle(els.scheduleScroll).paddingBottom) || 0;
+
+  const bottom = scheduleBottomOffset + dayHeight * (1 - minutes / 1440);
+
+  line.style.top = "";
+  line.style.bottom = `${bottom}px`;
+
+  label.textContent = now.toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
 
   syncScheduleOverlays();
 }
@@ -316,8 +348,8 @@ function renderSummary(visibleCritters, groups) {
   const areaCount = groups.length;
   const hiddenTodayCount = getHiddenRecordsForActiveDay().length;
   els.daySummary.innerHTML = `
-    <strong>${DAY_LABELS[state.activeDay]}</strong> · ${total} remaining critter${total === 1 ? "" : "s"} across ${areaCount} area${areaCount === 1 ? "" : "s"}
-    ${hiddenTodayCount ? ` · ${hiddenTodayCount} hidden today` : ""}
+    <strong>${DAY_LABELS[state.activeDay]}</strong> · ${total} remaining critter${total === 1 ? "" : "s"}
+    ${hiddenTodayCount ? ` · ${hiddenTodayCount} obtained` : ""}
   `;
 }
 
@@ -364,7 +396,7 @@ function openCritterModal(critterId) {
 function openHiddenModal() {
   const records = getHiddenRecords();
   if (!records.length) {
-    els.hiddenModalBody.innerHTML = `<p class="empty-state">No hidden critters yet.</p>`;
+    els.hiddenModalBody.innerHTML = `<p class="empty-state">No obtained critters yet.</p>`;
   } else {
     els.hiddenModalBody.innerHTML = `
       <div class="hidden-list">
