@@ -153,15 +153,15 @@ function c(id, name, imageFile, area, location, favouriteFood, approachMethod, s
 function getFoodImageFile(foodName) {
   const key = String(foodName || "").toLowerCase().trim();
   const map = {
-    "5-star meal": "Menu Icon Meals.png",
-    "5-star meals": "Menu Icon Meals.png",
-    "5-star dessert meal": "Menu Icon Meals.png",
-    "5-star vegetable meal": "Menu Icon Meals.png",
-    "green and yellow flowers": "Menu Icon Flowers.png",
-    "orange and yellow flowers": "Menu Icon Flowers.png",
-    "pink and purple flowers": "Menu Icon Flowers.png",
-    "blue and red flowers": "Menu Icon Flowers.png",
-    "green and pink flowers": "Menu Icon Flowers.png",
+    "5-star meal": "menu-icon-meals.png",
+    "5-star meals": "menu-icon-meals.png",
+    "5-star dessert meal": "menu-icon-meals.png",
+    "5-star vegetable meal": "menu-icon-meals.png",
+    "green and yellow flowers": "menu-icon-flowers.png",
+    "orange and yellow flowers": "menu-icon-flowers.png",
+    "pink and purple flowers": "menu-icon-flowers.png",
+    "blue and red flowers": "menu-icon-flowers.png",
+    "green and pink flowers": "menu-icon-flowers.png",
   };
   return map[key] || `${foodName}.png`;
 }

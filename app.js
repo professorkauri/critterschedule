@@ -140,7 +140,7 @@ function renderDayTabs() {
 function renderSchedule() {
   const visibleCritters = getVisibleCrittersForDay(state.activeDay);
   const groups = groupCrittersForSchedule(visibleCritters);
-  const columnCount = visibleCritters.length;
+  const columnCount = countScheduleLanes(groups);
   const gridColumns = `var(--time-col) repeat(${Math.max(columnCount, 1)}, var(--critter-col))`;
   els.scheduleGrid.style.gridTemplateColumns = gridColumns;
 
@@ -167,8 +167,8 @@ function renderSchedule() {
   col = 2;
   groups.forEach((areaGroup) => {
     areaGroup.locations.forEach((locationGroup) => {
-      locationGroup.critters.forEach((critter) => {
-        html += renderLane(critter, col);
+      locationGroup.lanes.forEach((lane) => {
+        html += renderLane(lane, col);
         col += 1;
       });
     });
@@ -183,35 +183,55 @@ function renderHeaders(groups, startCol) {
   let col = startCol;
 
   groups.forEach((areaGroup) => {
-    const span = countCrittersInAreaGroup(areaGroup);
-    html += `<div class="area-header" id="area-${slugify(areaGroup.area)}" style="grid-column: ${col} / span ${span};">${renderHeaderIcon(areaGroup.critters?.[0]?.areaIcon || areaIconPath(areaGroup.area))}<span class="header-label">${escapeHtml(areaGroup.area)}</span></div>`;
+    const span = countLanesInAreaGroup(areaGroup);
+    const firstCritter = areaGroup.locations?.[0]?.lanes?.[0]?.critters?.[0];
+
+    html += `
+      <div class="area-header" id="area-${slugify(areaGroup.area)}" style="grid-column: ${col} / span ${span};">
+        ${renderHeaderIcon(firstCritter?.areaIcon || areaIconPath(areaGroup.area))}
+        <span class="header-label">${escapeHtml(areaGroup.area)}</span>
+      </div>
+    `;
 
     areaGroup.locations.forEach((locationGroup) => {
-      html += `<div class="location-header" style="grid-column: ${col} / span ${locationGroup.critters.length};">${renderHeaderIcon(locationGroup.critters?.[0]?.locationIcon || locationIconPath(locationGroup.location))}<span class="header-label">${escapeHtml(locationGroup.location)}</span></div>`;
-      col += locationGroup.critters.length;
+      const locationSpan = locationGroup.lanes.length;
+      const firstLocationCritter = locationGroup.lanes?.[0]?.critters?.[0];
+
+      html += `
+        <div class="location-header" style="grid-column: ${col} / span ${locationSpan};">
+          ${renderHeaderIcon(firstLocationCritter?.locationIcon || locationIconPath(locationGroup.location))}
+          <span class="header-label">${escapeHtml(locationGroup.location)}</span>
+        </div>
+      `;
+
+      col += locationSpan;
     });
   });
 
   return html;
 }
 
-function renderLane(critter, col) {
-  const slots = parseScheduleSlots(critter.schedule[state.activeDay]);
-  const slotHtml = slots.map((slot) => {
-    const top = minutesToPercent(slot.start);
-    const height = minutesToPercent(slot.end - slot.start);
-    return `
-      <div class="critter-slot" style="top:${top}%; height:${height}%;">
-        <button class="critter-card" type="button" data-critter-id="${escapeHtml(critter.id)}">
-          <img class="critter-img" src="${escapeHtml(critter.image)}" alt="${escapeHtml(critter.name)}" loading="lazy" />
-          <span class="critter-name">${escapeHtml(critter.name)}</span>
-          <span class="critter-meta">
-            <span class="method">${escapeHtml(critter.approachMethod)}</span>
-            <span class="food">${renderFoodImage(critter)}${escapeHtml(critter.favouriteFood)}</span>
-          </span>
-        </button>
-      </div>
-    `;
+function renderLane(lane, col) {
+  const slotHtml = lane.critters.map((critter) => {
+    const slots = parseScheduleSlots(critter.schedule[state.activeDay]);
+
+    return slots.map((slot) => {
+      const top = minutesToPercent(slot.start);
+      const height = minutesToPercent(slot.end - slot.start);
+
+      return `
+        <div class="critter-slot" style="top:${top}%; height:${height}%;">
+          <button class="critter-card" type="button" data-critter-id="${escapeHtml(critter.id)}">
+            <img class="critter-img" src="${escapeHtml(critter.image)}" alt="${escapeHtml(critter.name)}" loading="lazy" />
+            <span class="critter-name">${escapeHtml(critter.name)}</span>
+            <span class="critter-meta">
+              <span class="method">${escapeHtml(critter.approachMethod)}</span>
+              <span class="food">${renderFoodImage(critter)}${escapeHtml(critter.favouriteFood)}</span>
+            </span>
+          </button>
+        </div>
+      `;
+    }).join("");
   }).join("");
 
   return `<div class="column-lane" style="grid-column:${col};">${slotHtml}</div>`;
@@ -302,9 +322,16 @@ function renderSummary(visibleCritters, groups) {
 }
 
 function renderAreaJump(groups) {
-  els.areaJump.innerHTML = groups.map((group) => `
-    <button class="area-pill" type="button" data-area-jump="${slugify(group.area)}">${renderHeaderIcon(AREA_ICONS[group.area])} ${escapeHtml(group.area)}</button>
-  `).join("");
+  els.areaJump.innerHTML = groups.map((group) => {
+    const areaIcon = group.critters?.[0]?.areaIcon || areaIconPath(group.area);
+
+    return `
+      <button class="area-pill" type="button" data-area-jump="${slugify(group.area)}">
+        ${renderHeaderIcon(areaIcon)}
+        <span class="area-pill-label">${escapeHtml(group.area)}</span>
+      </button>
+    `;
+  }).join("");
 }
 
 function openCritterModal(critterId) {
@@ -444,8 +471,10 @@ function groupCrittersForSchedule(critters) {
 
   critters.forEach((critter) => {
     if (!groupsByArea.has(critter.area)) groupsByArea.set(critter.area, new Map());
+
     const locations = groupsByArea.get(critter.area);
     if (!locations.has(critter.location)) locations.set(critter.location, []);
+
     locations.get(critter.location).push(critter);
   });
 
@@ -455,12 +484,64 @@ function groupCrittersForSchedule(critters) {
       area,
       locations: Array.from(locations.entries())
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([location, locationCritters]) => ({
-          location,
-          critters: locationCritters.sort(sortCrittersInLocation),
-        })),
+        .map(([location, locationCritters]) => {
+          const sortedCritters = locationCritters.sort(sortCrittersInLocation);
+
+          return {
+            location,
+            critters: sortedCritters,
+            lanes: packCrittersIntoLanes(sortedCritters),
+          };
+        }),
     }))
     .filter((group) => countCrittersInAreaGroup(group) > 0);
+}
+
+function packCrittersIntoLanes(critters) {
+  const lanes = [];
+
+  critters.forEach((critter) => {
+    const critterSlots = getCritterComparableSlots(critter);
+
+    let matchingLane = lanes.find((lane) => {
+      return lane.slots.every((existingSlot) => {
+        return critterSlots.every((newSlot) => !scheduleSlotsOverlap(existingSlot, newSlot));
+      });
+    });
+
+    if (!matchingLane) {
+      matchingLane = {
+        critters: [],
+        slots: [],
+      };
+      lanes.push(matchingLane);
+    }
+
+    matchingLane.critters.push(critter);
+    matchingLane.slots.push(...critterSlots);
+    matchingLane.slots.sort((a, b) => a.start - b.start || a.end - b.end);
+  });
+
+  return lanes;
+}
+
+function getCritterComparableSlots(critter) {
+  return parseScheduleSlots(critter.schedule?.[state.activeDay]).map((slot) => ({
+    start: slot.start,
+    end: slot.end,
+  }));
+}
+
+function scheduleSlotsOverlap(a, b) {
+  return a.start < b.end && b.start < a.end;
+}
+
+function countScheduleLanes(groups) {
+  return groups.reduce((total, areaGroup) => total + countLanesInAreaGroup(areaGroup), 0);
+}
+
+function countLanesInAreaGroup(areaGroup) {
+  return areaGroup.locations.reduce((total, locationGroup) => total + locationGroup.lanes.length, 0);
 }
 
 function sortCritters(a, b) {
@@ -497,25 +578,49 @@ function parseScheduleSlots(value) {
 
 function parseSchedulePart(part) {
   const compactMatch = part.match(/^(\d{1,2})\s*-\s*(\d{1,2})\s*(AM|PM)$/i);
+
   if (compactMatch) {
     const period = compactMatch[3].toUpperCase();
-    return {
-      start: toMinutes(`${compactMatch[1]} ${period}`),
-      end: toMinutes(`${compactMatch[2]} ${period}`),
-    };
+
+    let start = toMinutes(`${compactMatch[1]} ${period}`);
+    let end = toMinutes(`${compactMatch[2]} ${period}`);
+
+    if (end <= start) {
+      end += 720;
+    }
+
+    return { start, end };
   }
 
-  const match = part.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)\s+to\s+(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
+  const match = part.match(
+    /^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)\s+to\s+(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i
+  );
+
   if (!match) return null;
 
-  return {
-    start: toMinutes(`${match[1]}:${match[2] || "00"} ${match[3]}`),
-    end: toMinutes(`${match[4]}:${match[5] || "00"} ${match[6]}`),
-  };
+  let start = toMinutes(
+    `${match[1]}:${match[2] || "00"} ${match[3]}`
+  );
+
+  let end = toMinutes(
+    `${match[4]}:${match[5] || "00"} ${match[6]}`
+  );
+
+  if (
+    match[4] === "12" &&
+    match[6].toUpperCase() === "AM"
+  ) {
+    end = 1440;
+  }
+
+  return { start, end };
 }
 
 function toMinutes(timeText) {
-  const match = String(timeText).match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
+  const match = String(timeText).match(
+    /^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i
+  );
+
   if (!match) return 0;
 
   let hour = Number(match[1]);
@@ -524,9 +629,8 @@ function toMinutes(timeText) {
 
   if (period === "AM" && hour === 12) hour = 0;
   if (period === "PM" && hour !== 12) hour += 12;
-  if (hour === 24) hour = 0;
-  const total = hour * 60 + minute;
-  return total === 0 && /12\s*AM/i.test(timeText) ? 1440 : total;
+
+  return (hour * 60) + minute;
 }
 
 function minutesToPercent(minutes) {
