@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dreamlight Critter Schedule</title>
   <link rel="preconnect" href="https://dreamlightvalleywiki.com" />
+  <meta name="theme-color" content="#202778">
   <style>
     :root {
       --bg: #141b5c;
@@ -785,7 +786,7 @@
       .tabs {
         width: 100%;
         justify-self: stretch;
-        grid-auto-columns: minmax(58px, 1fr);
+        grid-auto-columns: minmax(40px, 1fr);
         overflow-x: auto;
       }
 
@@ -870,15 +871,6 @@
       .detail-image {
         width: 116px;
         height: 116px;
-      }
-
-      .hidden-row {
-        grid-template-columns: 46px 1fr;
-      }
-
-      .hidden-row .ghost-button {
-        grid-column: 1 / -1;
-        width: 100%;
       }
     }
   </style>

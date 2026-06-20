@@ -108,6 +108,7 @@ init();
 
 function init() {
   cleanHidden();
+  touchHiddenStorage();
   renderDayTabs();
   renderSchedule();
   updateHiddenButton();
@@ -523,13 +524,29 @@ function isHiddenForActiveDate(critterId) {
   return Boolean(state.hidden[critterId]);
 }
 
+function getCritterTypeName(critter) {
+  const nameParts = String(critter?.name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  return nameParts.length ? nameParts[nameParts.length - 1] : "";
+}
+
 function getHiddenRecords() {
   return Object.values(state.hidden)
     .filter((record) => getCritterById(record.critterId))
     .sort((a, b) => {
-      const aDate = a.updatedAt || a.obtainedAt || "";
-      const bDate = b.updatedAt || b.obtainedAt || "";
-      return bDate.localeCompare(aDate);
+      const critterA = getCritterById(a.critterId);
+      const critterB = getCritterById(b.critterId);
+
+      const typeA = getCritterTypeName(critterA);
+      const typeB = getCritterTypeName(critterB);
+
+      return (
+        typeA.localeCompare(typeB) ||
+        critterA.name.localeCompare(critterB.name)
+      );
     });
 }
 
@@ -567,6 +584,10 @@ function saveHidden() {
       records: state.hidden,
     })
   );
+}
+
+function touchHiddenStorage() {
+  saveHidden();
 }
 
 function cleanHidden() {
