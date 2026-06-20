@@ -155,7 +155,7 @@ function getFoodImageFile(foodName) {
   const map = {
     "5-star meal": "menu-icon-meals.png",
     "5-star meals": "menu-icon-meals.png",
-    "5-star dessert meal": "menu-icon-meals.png",
+    "5-star dessert": "menu-icon-meals.png",
     "5-star vegetable meal": "menu-icon-meals.png",
     "green and yellow flowers": "menu-icon-flowers.png",
     "orange and yellow flowers": "menu-icon-flowers.png",
