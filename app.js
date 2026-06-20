@@ -74,6 +74,15 @@ const AREA_ORDER = ["Dreamlight Valley", "Eternity Isle", "Storybook Vale", "Wis
 const STORAGE_KEY = "ddlvCritterScheduleHiddenV1";
 const STORAGE_MAX_AGE_DAYS = 30;
 
+function getTodayKey() {
+  return DAYS[new Date().getDay()];
+}
+
+function orderDaysFromToday() {
+  const todayIndex = DAYS.indexOf(getTodayKey());
+  return [...DAYS.slice(todayIndex), ...DAYS.slice(0, todayIndex)];
+}
+
 const state = {
   todayKey: getTodayKey(),
   activeDay: getTodayKey(),
@@ -410,7 +419,12 @@ function openHiddenModal() {
 function renderHiddenRow(record) {
   const critter = getCritterById(record.critterId);
   if (!critter) return "";
-  const dateLabel = record.date === todayDateKey() ? "Today" : record.date;
+
+  const obtainedDate = record.updatedAt || record.obtainedAt;
+  const dateLabel = obtainedDate
+    ? new Date(obtainedDate).toLocaleDateString([], { month: "short", day: "numeric" })
+    : "Obtained";
+
   return `
     <div class="hidden-row">
       <img src="${escapeHtml(critter.image)}" alt="${escapeHtml(critter.name)}" loading="lazy" />
@@ -613,4 +627,193 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function getCritterById(critterId) {
+  return (window.DDLV_CRITTERS || []).find((critter) => critter.id === critterId);
+}
+
+function isAvailable(critter, day) {
+  const value = String(critter?.schedule?.[day] || "").trim().toLowerCase();
+  return Boolean(value && value !== "n/a");
+}
+
+function sortCritters(a, b) {
+  return (
+    areaSortValue(a.area) - areaSortValue(b.area) ||
+    String(a.location).localeCompare(String(b.location)) ||
+    getEarliestStart(a, state.activeDay) - getEarliestStart(b, state.activeDay) ||
+    String(a.name).localeCompare(String(b.name))
+  );
+}
+
+function getEarliestStart(critter, day) {
+  const slots = parseScheduleSlots(critter.schedule?.[day]);
+  return slots.length ? Math.min(...slots.map((slot) => slot.start)) : 99999;
+}
+
+function groupCrittersForSchedule(critters) {
+  const areaMap = new Map();
+
+  critters.forEach((critter) => {
+    if (!areaMap.has(critter.area)) {
+      areaMap.set(critter.area, {
+        area: critter.area,
+        critters: [],
+        locations: new Map(),
+      });
+    }
+
+    const areaGroup = areaMap.get(critter.area);
+    areaGroup.critters.push(critter);
+
+    if (!areaGroup.locations.has(critter.location)) {
+      areaGroup.locations.set(critter.location, {
+        location: critter.location,
+        critters: [],
+        lanes: [],
+      });
+    }
+
+    areaGroup.locations.get(critter.location).critters.push(critter);
+  });
+
+  return Array.from(areaMap.values())
+    .sort((a, b) => areaSortValue(a.area) - areaSortValue(b.area) || a.area.localeCompare(b.area))
+    .map((areaGroup) => ({
+      area: areaGroup.area,
+      critters: areaGroup.critters,
+      locations: Array.from(areaGroup.locations.values())
+        .sort((a, b) => a.location.localeCompare(b.location))
+        .map((locationGroup) => ({
+          location: locationGroup.location,
+          critters: locationGroup.critters,
+          lanes: packCrittersIntoLanes(locationGroup.critters),
+        })),
+    }));
+}
+
+function packCrittersIntoLanes(critters) {
+  const lanes = [];
+
+  [...critters]
+    .sort((a, b) => {
+      return (
+        getEarliestStart(a, state.activeDay) - getEarliestStart(b, state.activeDay) ||
+        String(a.name).localeCompare(String(b.name))
+      );
+    })
+    .forEach((critter) => {
+      const slots = parseScheduleSlots(critter.schedule?.[state.activeDay]);
+      let lane = lanes.find((existingLane) => {
+        return existingLane.critters.every((existingCritter) => {
+          const existingSlots = parseScheduleSlots(existingCritter.schedule?.[state.activeDay]);
+          return !slotsOverlap(slots, existingSlots);
+        });
+      });
+
+      if (!lane) {
+        lane = { critters: [] };
+        lanes.push(lane);
+      }
+
+      lane.critters.push(critter);
+    });
+
+  return lanes.length ? lanes : [{ critters: [] }];
+}
+
+function slotsOverlap(slotsA, slotsB) {
+  return slotsA.some((a) => {
+    return slotsB.some((b) => a.start < b.end && a.end > b.start);
+  });
+}
+
+function countScheduleLanes(groups) {
+  return groups.reduce((total, areaGroup) => total + countLanesInAreaGroup(areaGroup), 0);
+}
+
+function countLanesInAreaGroup(areaGroup) {
+  return areaGroup.locations.reduce((total, locationGroup) => total + locationGroup.lanes.length, 0);
+}
+
+function parseScheduleSlots(value) {
+  const text = String(value || "").trim();
+  if (!text || text.toLowerCase() === "n/a") return [];
+  if (text.toLowerCase() === "all day") return [{ start: 0, end: 1440 }];
+
+  return text
+    .split(/\s+and\s+/i)
+    .map((part) => parseScheduleSlot(part.trim()))
+    .filter(Boolean);
+}
+
+function parseScheduleSlot(value) {
+  const normalised = String(value || "").replace(/\s+/g, " ").trim();
+
+  const toMatch = normalised.match(/^(.+?)\s+to\s+(.+)$/i);
+  if (toMatch) {
+    const start = parseTimeString(toMatch[1]);
+    const end = parseTimeString(toMatch[2]);
+    if (start === null || end === null) return null;
+    return { start, end: end <= start ? end + 1440 : end };
+  }
+
+  const hyphenMatch = normalised.match(/^(\d{1,2})\s*-\s*(\d{1,2})\s*(AM|PM)$/i);
+  if (hyphenMatch) {
+    const period = hyphenMatch[3];
+    const start = parseTimeString(`${hyphenMatch[1]} ${period}`);
+    const end = parseTimeString(`${hyphenMatch[2]} ${period}`);
+    if (start === null || end === null) return null;
+    return { start, end: end <= start ? end + 1440 : end };
+  }
+
+  return null;
+}
+
+function parseTimeString(value) {
+  const match = String(value || "").trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
+  if (!match) return null;
+
+  let hours = Number(match[1]);
+  const minutes = Number(match[2] || 0);
+  const period = match[3].toUpperCase();
+
+  if (period === "AM" && hours === 12) hours = 0;
+  if (period === "PM" && hours !== 12) hours += 12;
+
+  return hours * 60 + minutes;
+}
+
+function minutesToPercent(minutes) {
+  return (minutes / 1440) * 100;
+}
+
+function formatHour(hour) {
+  if (hour === 0 || hour === 24) return "12 AM";
+  if (hour === 12) return "12 PM";
+  return hour < 12 ? `${hour} AM` : `${hour - 12} PM`;
+}
+
+function areaIconPath(area) {
+  if (typeof areaIcon === "function") return areaIcon(area);
+  return `assets/areas/${slugify(area)}.png`;
+}
+
+function locationIconPath(location) {
+  if (typeof locationIcon === "function") return locationIcon(location);
+  return `assets/locations/${slugify(location)}.png`;
+}
+
+function renderHeaderIcon(iconPath) {
+  return `
+    <span class="header-icon image-icon" aria-hidden="true">
+      <img src="${escapeHtml(iconPath)}" alt="" loading="lazy" />
+    </span>
+  `;
+}
+
+function renderFoodImage(critter) {
+  if (!critter?.favouriteFoodImage) return "";
+  return `<img class="food-img" src="${escapeHtml(critter.favouriteFoodImage)}" alt="" loading="lazy" />`;
 }
