@@ -662,6 +662,7 @@ function isAvailable(critter, day) {
 function sortCritters(a, b) {
   return (
     areaSortValue(a.area) - areaSortValue(b.area) ||
+    getCritterTypeName(a).localeCompare(getCritterTypeName(b)) ||
     String(a.location).localeCompare(String(b.location)) ||
     getEarliestStart(a, state.activeDay) - getEarliestStart(b, state.activeDay) ||
     String(a.name).localeCompare(String(b.name))
@@ -705,7 +706,15 @@ function groupCrittersForSchedule(critters) {
       area: areaGroup.area,
       critters: areaGroup.critters,
       locations: Array.from(areaGroup.locations.values())
-        .sort((a, b) => a.location.localeCompare(b.location))
+        .sort((a, b) => {
+          const typeA = getCritterTypeName(a.critters[0]);
+          const typeB = getCritterTypeName(b.critters[0]);
+
+          return (
+            typeA.localeCompare(typeB) ||
+            a.location.localeCompare(b.location)
+          );
+        })
         .map((locationGroup) => ({
           location: locationGroup.location,
           critters: locationGroup.critters,
