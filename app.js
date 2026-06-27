@@ -72,6 +72,7 @@ const DEFAULT_ICON = "sparkle";
 const DEFAULT_SLOT_COLOUR = "#386c54";
 const AREA_ORDER = ["Dreamlight Valley", "Eternity Isle", "Storybook Vale", "Wishblossom Mountains"];
 const STORAGE_KEY = "ddlvCritterScheduleHiddenV1";
+const UNLOCKED_AREAS_STORAGE_KEY = "ddlvCritterScheduleUnlockedAreasV1";
 const STORAGE_MAX_AGE_DAYS = 30;
 
 function getTodayKey() {
@@ -87,6 +88,7 @@ const state = {
   todayKey: getTodayKey(),
   activeDay: getTodayKey(),
   hidden: loadHidden(),
+  unlockedAreas: loadUnlockedAreas(),
 };
 
 const els = {
@@ -102,6 +104,10 @@ const els = {
   critterModalBody: document.getElementById("critterModalBody"),
   hiddenModal: document.getElementById("hiddenModal"),
   hiddenModalBody: document.getElementById("hiddenModalBody"),
+  unlockedCount: document.getElementById("unlockedCount"),
+  openUnlockedButton: document.getElementById("openUnlockedButton"),
+  unlockedModal: document.getElementById("unlockedModal"),
+  unlockedModalBody: document.getElementById("unlockedModalBody"),
 };
 
 init();
@@ -109,11 +115,14 @@ init();
 function init() {
   cleanHidden();
   touchHiddenStorage();
+  touchUnlockedAreasStorage();
   renderDayTabs();
   renderSchedule();
   updateHiddenButton();
+  updateUnlockedAreasButton();
 
   els.openHiddenButton.addEventListener("click", openHiddenModal);
+  els.openUnlockedButton.addEventListener("click", openUnlockedAreasModal);
   els.scheduleScroll.addEventListener("scroll", () => {
     syncScheduleOverlays();
     updateStickyCritterCards();
@@ -471,6 +480,18 @@ function handleDocumentClick(event) {
     return;
   }
 
+  const unlockedCheckbox = event.target.closest("[data-unlocked-area-key]");
+  if (unlockedCheckbox) {
+    setLocationUnlocked(
+      unlockedCheckbox.dataset.unlockedArea,
+      unlockedCheckbox.dataset.unlockedLocation,
+      unlockedCheckbox.checked
+    );
+    updateUnlockedAreasButton();
+    renderSchedule();
+    return;
+  }
+
   const areaJump = event.target.closest("[data-area-jump]");
   if (areaJump) {
     document.getElementById(`area-${areaJump.dataset.areaJump}`)?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
@@ -513,6 +534,7 @@ function getVisibleCrittersForDay(day) {
   return (window.DDLV_CRITTERS || [])
     .filter((critter) => isAvailable(critter, day))
     .filter((critter) => !isHiddenForActiveDate(critter.id))
+    .filter((critter) => isLocationUnlocked(critter.area, critter.location))
     .sort(sortCritters);
 }
 
@@ -620,13 +642,129 @@ function normaliseHiddenRecords(records) {
   return cleaned;
 }
 
+function openUnlockedAreasModal() {
+  const groups = getUnlockedAreaGroups();
+
+  els.unlockedModalBody.innerHTML = `
+    <div class="unlocked-list">
+      ${groups.map((group) => `
+        <section class="unlocked-group">
+          <h3 class="unlocked-group-title">${escapeHtml(group.area)}</h3>
+          ${group.locations.map((location) => {
+            const key = unlockedAreaKey(group.area, location.location);
+            const checked = isLocationUnlocked(group.area, location.location) ? " checked" : "";
+
+            return `
+              <label class="unlocked-row">
+                <input
+                  type="checkbox"
+                  data-unlocked-area-key="${escapeHtml(key)}"
+                  data-unlocked-area="${escapeHtml(group.area)}"
+                  data-unlocked-location="${escapeHtml(location.location)}"
+                  ${checked}
+                />
+                <span>${renderHeaderIcon(location.icon)} ${escapeHtml(location.location)}</span>
+              </label>
+            `;
+          }).join("")}
+        </section>
+      `).join("")}
+    </div>
+  `;
+
+  openModal(els.unlockedModal);
+}
+
+function getUnlockedAreaGroups() {
+  const groups = groupCrittersForSchedule([...(window.DDLV_CRITTERS || [])].sort(sortCritters));
+
+  return groups.map((group) => ({
+    area: group.area,
+    locations: group.locations.map((locationGroup) => {
+      const firstCritter = locationGroup.critters?.[0];
+
+      return {
+        location: locationGroup.location,
+        icon: firstCritter?.locationIcon || locationIconPath(locationGroup.location),
+      };
+    }),
+  }));
+}
+
+function unlockedAreaKey(area, location) {
+  return `${slugify(area)}::${slugify(location)}`;
+}
+
+function isLocationUnlocked(area, location) {
+  const key = unlockedAreaKey(area, location);
+  return state.unlockedAreas[key] !== false;
+}
+
+function setLocationUnlocked(area, location, unlocked) {
+  const key = unlockedAreaKey(area, location);
+
+  if (unlocked) {
+    delete state.unlockedAreas[key];
+  } else {
+    state.unlockedAreas[key] = false;
+  }
+
+  saveUnlockedAreas();
+}
+
+function updateUnlockedAreasButton() {
+  const groups = getUnlockedAreaGroups();
+  const total = groups.reduce((sum, group) => sum + group.locations.length, 0);
+  const unlocked = groups.reduce((sum, group) => {
+    return sum + group.locations.filter((location) => isLocationUnlocked(group.area, location.location)).length;
+  }, 0);
+
+  els.unlockedCount.textContent = `${unlocked}/${total}`;
+}
+
+function loadUnlockedAreas() {
+  try {
+    const raw = localStorage.getItem(UNLOCKED_AREAS_STORAGE_KEY);
+    if (!raw) return {};
+
+    const parsed = JSON.parse(raw);
+    const now = Date.now();
+    const maxAge = STORAGE_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+
+    if (parsed?.lastLoadedAt) {
+      const lastLoadedAt = Date.parse(parsed.lastLoadedAt);
+      if (!lastLoadedAt || now - lastLoadedAt > maxAge) return {};
+      return parsed.records || {};
+    }
+
+    return parsed || {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveUnlockedAreas() {
+  localStorage.setItem(
+    UNLOCKED_AREAS_STORAGE_KEY,
+    JSON.stringify({
+      version: 1,
+      lastLoadedAt: new Date().toISOString(),
+      records: state.unlockedAreas,
+    })
+  );
+}
+
+function touchUnlockedAreasStorage() {
+  saveUnlockedAreas();
+}
+
 function openModal(modal) {
   modal.classList.add("open");
   modal.setAttribute("aria-hidden", "false");
 }
 
 function closeAllModals() {
-  [els.critterModal, els.hiddenModal].forEach((modal) => {
+  [els.critterModal, els.hiddenModal, els.unlockedModal].forEach((modal) => {
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
   });

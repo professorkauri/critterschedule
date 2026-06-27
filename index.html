@@ -49,7 +49,7 @@
       margin: 0;
       min-height: 100vh;
       color: var(--text);
-      background:#18236f;
+      background: #18236f;
       background:
         radial-gradient(circle at 20% 0%,
           rgba(122, 91, 214, 0.65),
@@ -753,6 +753,44 @@
       height: 28px;
     }
 
+    .footer-actions {
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .unlocked-list {
+      display: grid;
+      gap: 16px;
+    }
+
+    .unlocked-group {
+      display: grid;
+      gap: 8px;
+    }
+
+    .unlocked-group-title {
+      margin: 0;
+      color: var(--gold);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 20px;
+    }
+
+    .unlocked-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+    }
+
+    .unlocked-row input {
+      width: 18px;
+      height: 18px;
+    }
+
     @media (max-width: 900px) {
       :root {
         --hour-height: 40px;
@@ -904,6 +942,10 @@
       <button class="hidden-button" id="openHiddenButton" type="button">
         ⊘ Obtained Critters <span id="hiddenCount">0</span>
       </button>
+
+      <button class="hidden-button" id="openUnlockedButton" type="button">
+        ✦ Unlocked Areas <span id="unlockedCount">0</span>
+      </button>
     </div>
 
     <p class="note">
@@ -929,6 +971,16 @@
         <button class="close-button" type="button" data-close-modal>×</button>
       </div>
       <div class="modal-body" id="hiddenModalBody"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="unlockedModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="unlockedModalTitle">
+      <div class="modal-header">
+        <h2 class="modal-title" id="unlockedModalTitle">Unlocked Areas</h2>
+        <button class="close-button" type="button" data-close-modal>×</button>
+      </div>
+      <div class="modal-body" id="unlockedModalBody"></div>
     </div>
   </div>
 
