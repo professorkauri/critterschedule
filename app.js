@@ -73,6 +73,7 @@ const DEFAULT_SLOT_COLOUR = "#386c54";
 const AREA_ORDER = ["Dreamlight Valley", "Eternity Isle", "Storybook Vale", "Wishblossom Mountains"];
 const STORAGE_KEY = "ddlvCritterScheduleHiddenV1";
 const UNLOCKED_AREAS_STORAGE_KEY = "ddlvCritterScheduleUnlockedAreasV1";
+const FED_TODAY_STORAGE_KEY = "ddlvCritterScheduleFedTodayV1";
 const STORAGE_MAX_AGE_DAYS = 30;
 
 function getTodayKey() {
@@ -89,12 +90,11 @@ const state = {
   activeDay: getTodayKey(),
   hidden: loadHidden(),
   unlockedAreas: loadUnlockedAreas(),
+  fedToday: loadFedToday(),
 };
 
 const els = {
   dayTabs: document.getElementById("dayTabs"),
-  daySummary: document.getElementById("daySummary"),
-  areaJump: document.getElementById("areaJump"),
   scheduleScroll: document.getElementById("scheduleScroll"),
   scheduleGrid: document.getElementById("scheduleGrid"),
   hiddenCount: document.getElementById("hiddenCount"),
@@ -138,6 +138,8 @@ function init() {
     if (nextToday !== state.todayKey) {
       state.todayKey = nextToday;
       state.activeDay = nextToday;
+      state.fedToday = loadFedToday();
+      saveFedToday();
       cleanHidden();
       renderDayTabs();
       renderSchedule();
@@ -164,9 +166,6 @@ function renderSchedule() {
   const columnCount = countScheduleLanes(groups);
   const gridColumns = `var(--time-col) repeat(${Math.max(columnCount, 1)}, var(--critter-col))`;
   els.scheduleGrid.style.gridTemplateColumns = gridColumns;
-
-  renderSummary(visibleCritters, groups);
-  renderAreaJump(groups);
 
   let html = `<div class="time-spacer"></div>`;
 
@@ -362,34 +361,13 @@ function getTimeColumnWidth() {
   return parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--time-col")) || 78;
 }
 
-function renderSummary(visibleCritters, groups) {
-  const total = visibleCritters.length;
-  const areaCount = groups.length;
-  const hiddenTodayCount = getHiddenRecordsForActiveDay().length;
-  els.daySummary.innerHTML = `
-    <strong>${DAY_LABELS[state.activeDay]}</strong> · ${total} remaining critter${total === 1 ? "" : "s"}
-    ${hiddenTodayCount ? ` · ${hiddenTodayCount} obtained` : ""}
-  `;
-}
-
-function renderAreaJump(groups) {
-  els.areaJump.innerHTML = groups.map((group) => {
-    const areaIcon = group.critters?.[0]?.areaIcon || areaIconPath(group.area);
-
-    return `
-      <button class="area-pill" type="button" data-area-jump="${slugify(group.area)}">
-        ${renderHeaderIcon(areaIcon)}
-        <span class="area-pill-label">${escapeHtml(group.area)}</span>
-      </button>
-    `;
-  }).join("");
-}
-
 function openCritterModal(critterId) {
   const critter = getCritterById(critterId);
   if (!critter) return;
 
   const scheduleText = critter.schedule[state.activeDay] || "n/a";
+  const isTodaySchedule = state.activeDay === state.todayKey;
+
   els.critterModalTitle.textContent = critter.name;
   els.critterModalBody.innerHTML = `
     <div class="critter-detail">
@@ -405,7 +383,8 @@ function openCritterModal(critterId) {
       </div>
     </div>
     <div class="modal-actions">
-      <button class="primary-button" type="button" data-hide-critter="${escapeHtml(critter.id)}">✓ Mark as obtained</button>
+      ${isTodaySchedule ? `<button class="primary-button" type="button" data-feed-critter="${escapeHtml(critter.id)}">🍽 Feed</button>` : ""}
+      <button class="primary-button" type="button" data-hide-critter="${escapeHtml(critter.id)}">✓ Obtained</button>
       <button class="ghost-button" type="button" data-close-modal>Cancel</button>
     </div>
   `;
@@ -462,6 +441,14 @@ function handleDocumentClick(event) {
     return;
   }
 
+  const feedButton = event.target.closest("[data-feed-critter]");
+  if (feedButton) {
+    feedCritterToday(feedButton.dataset.feedCritter);
+    closeAllModals();
+    renderSchedule();
+    return;
+  }
+
   const hideButton = event.target.closest("[data-hide-critter]");
   if (hideButton) {
     hideCritter(hideButton.dataset.hideCritter);
@@ -489,12 +476,6 @@ function handleDocumentClick(event) {
     );
     updateUnlockedAreasButton();
     renderSchedule();
-    return;
-  }
-
-  const areaJump = event.target.closest("[data-area-jump]");
-  if (areaJump) {
-    document.getElementById(`area-${areaJump.dataset.areaJump}`)?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
     return;
   }
 
@@ -527,13 +508,17 @@ function unhideRecord(key) {
 }
 
 function updateHiddenButton() {
-  els.hiddenCount.textContent = getHiddenRecords().length;
+  const obtained = getHiddenRecords().length;
+  const total = (window.DDLV_CRITTERS || []).length;
+
+  els.hiddenCount.textContent = `${obtained}/${total}`;
 }
 
 function getVisibleCrittersForDay(day) {
   return (window.DDLV_CRITTERS || [])
     .filter((critter) => isAvailable(critter, day))
     .filter((critter) => !isHiddenForActiveDate(critter.id))
+    .filter((critter) => !isFedToday(critter.id, day))
     .filter((critter) => isLocationUnlocked(critter.area, critter.location))
     .sort(sortCritters);
 }
@@ -756,6 +741,70 @@ function saveUnlockedAreas() {
 
 function touchUnlockedAreasStorage() {
   saveUnlockedAreas();
+}
+
+function feedCritterToday(critterId) {
+  const critter = getCritterById(critterId);
+  if (!critter) return;
+
+  state.fedToday.records[critter.id] = {
+    critterId: critter.id,
+    fedAt: new Date().toISOString(),
+  };
+
+  saveFedToday();
+}
+
+function isFedToday(critterId, day) {
+  if (day !== state.todayKey) return false;
+  return Boolean(state.fedToday.records?.[critterId]);
+}
+
+function getTodayStorageDateKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function loadFedToday() {
+  try {
+    const raw = localStorage.getItem(FED_TODAY_STORAGE_KEY);
+    if (!raw) {
+      return {
+        dateKey: getTodayStorageDateKey(),
+        records: {},
+      };
+    }
+
+    const parsed = JSON.parse(raw);
+    const todayDateKey = getTodayStorageDateKey();
+
+    if (parsed?.dateKey !== todayDateKey) {
+      return {
+        dateKey: todayDateKey,
+        records: {},
+      };
+    }
+
+    return {
+      dateKey: todayDateKey,
+      records: parsed.records || {},
+    };
+  } catch (error) {
+    return {
+      dateKey: getTodayStorageDateKey(),
+      records: {},
+    };
+  }
+}
+
+function saveFedToday() {
+  localStorage.setItem(
+    FED_TODAY_STORAGE_KEY,
+    JSON.stringify({
+      version: 1,
+      dateKey: getTodayStorageDateKey(),
+      records: state.fedToday.records || {},
+    })
+  );
 }
 
 function openModal(modal) {
