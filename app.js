@@ -235,13 +235,14 @@ function renderHeaders(groups, startCol) {
 function renderLane(lane, col) {
   const slotHtml = lane.critters.map((critter) => {
     const slots = parseScheduleSlots(critter.schedule[state.activeDay]);
+    const fedClass = isFedToday(critter.id, state.activeDay) ? " fed" : "";
 
     return slots.map((slot) => {
       const top = minutesToPercent(slot.start);
       const height = minutesToPercent(slot.end - slot.start);
 
       return `
-        <div class="critter-slot" style="top:${top}%; height:${height}%;">
+        <div class="critter-slot${fedClass}" style="top:${top}%; height:${height}%;">
           <button class="critter-card" type="button" data-critter-id="${escapeHtml(critter.id)}">
             <img class="critter-img" src="${escapeHtml(critter.image)}" alt="${escapeHtml(critter.name)}" loading="lazy" />
             <span class="critter-name">${escapeHtml(critter.name)}</span>
@@ -367,6 +368,7 @@ function openCritterModal(critterId) {
 
   const scheduleText = critter.schedule[state.activeDay] || "n/a";
   const isTodaySchedule = state.activeDay === state.todayKey;
+  const fedToday = isFedToday(critter.id, state.activeDay);
 
   els.critterModalTitle.textContent = critter.name;
   els.critterModalBody.innerHTML = `
@@ -383,7 +385,7 @@ function openCritterModal(critterId) {
       </div>
     </div>
     <div class="modal-actions">
-      ${isTodaySchedule ? `<button class="primary-button" type="button" data-feed-critter="${escapeHtml(critter.id)}">🍽 Feed</button>` : ""}
+      ${isTodaySchedule ? `<button class="primary-button" type="button" data-feed-critter="${escapeHtml(critter.id)}">${fedToday ? "✓ Fed" : "🍽 Feed"}</button>` : ""}
       <button class="primary-button" type="button" data-hide-critter="${escapeHtml(critter.id)}">✓ Obtained</button>
       <button class="ghost-button" type="button" data-close-modal>Cancel</button>
     </div>
@@ -443,7 +445,7 @@ function handleDocumentClick(event) {
 
   const feedButton = event.target.closest("[data-feed-critter]");
   if (feedButton) {
-    feedCritterToday(feedButton.dataset.feedCritter);
+    toggleFeedCritterToday(feedButton.dataset.feedCritter);
     closeAllModals();
     renderSchedule();
     return;
@@ -518,7 +520,6 @@ function getVisibleCrittersForDay(day) {
   return (window.DDLV_CRITTERS || [])
     .filter((critter) => isAvailable(critter, day))
     .filter((critter) => !isHiddenForActiveDate(critter.id))
-    .filter((critter) => !isFedToday(critter.id, day))
     .filter((critter) => isLocationUnlocked(critter.area, critter.location))
     .sort(sortCritters);
 }
@@ -743,14 +744,18 @@ function touchUnlockedAreasStorage() {
   saveUnlockedAreas();
 }
 
-function feedCritterToday(critterId) {
+function toggleFeedCritterToday(critterId) {
   const critter = getCritterById(critterId);
   if (!critter) return;
 
-  state.fedToday.records[critter.id] = {
-    critterId: critter.id,
-    fedAt: new Date().toISOString(),
-  };
+  if (state.fedToday.records[critter.id]) {
+    delete state.fedToday.records[critter.id];
+  } else {
+    state.fedToday.records[critter.id] = {
+      critterId: critter.id,
+      fedAt: new Date().toISOString(),
+    };
+  }
 
   saveFedToday();
 }
