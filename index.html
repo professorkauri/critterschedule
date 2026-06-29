@@ -535,6 +535,7 @@
     .modal-backdrop {
       position: fixed;
       inset: 0;
+      top:0;
       display: none;
       align-items: center;
       justify-content: center;
@@ -615,6 +616,8 @@
 
       & div {
         display: flex;
+        flex-direction:column;
+        justify-content: center;
         gap: 1em;
         width: 100%;
         text-align: center;
@@ -622,8 +625,9 @@
     }
 
     .detail-image {
-      width: 132px;
-      height: 132px;
+      width: 100px;
+      max-width:100%;
+      height: 100px;
       object-fit: contain;
       filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.35));
     }
@@ -647,13 +651,13 @@
       margin-bottom: 2px;
       color: var(--muted);
       font-size: 12px;
-      width: 30%;
       gap: 3px;
     }
 
     .detail-value {
       font-weight: normal;
       color: #fff;
+      font-size: 12px;
 
       & i {
         opacity: 0.5;
@@ -922,11 +926,19 @@
 
       .detail-image-wrap {
         min-height: 120px;
+
+        & div {
+          display: flex;
+          flex-direction:row;
+          gap: 1em;
+          width: 100%;
+          text-align: center;
+        }
       }
 
       .detail-image {
-        width: 116px;
-        height: 116px;
+        width: 100px;
+        height: 100px;
       }
     }
   </style>
