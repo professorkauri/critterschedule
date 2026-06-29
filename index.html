@@ -212,7 +212,6 @@
 
     .day-name {
       display: block;
-      font-weight: 800;
     }
 
     .today-label {
@@ -276,7 +275,6 @@
       background: rgba(18, 26, 82, 0.96);
       border-right: 1px solid var(--line);
       border-bottom: 1px solid var(--line);
-      font-weight: 800;
     }
 
     .header-icon {
@@ -404,7 +402,7 @@
         box-shadow 0.25s ease;
 
       &.fed {
-        opacity:0.5;
+        opacity: 0.5;
       }
     }
 
@@ -413,9 +411,10 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: stretch;
       gap: 3px;
       width: 100%;
-      padding: 7px 5px 8px;
+      padding: 6px 0px;
       color: #fff;
       border: 0;
       background: transparent;
@@ -432,11 +431,12 @@
     }
 
     .critter-name {
-      font-weight: 900;
+      text-transform: uppercase;
       font-size: 11px;
       line-height: 1.06;
       text-align: center;
       transition: color 0.15s ease;
+      padding: 3px 5px 0 5px;
     }
 
     .critter-meta {
@@ -448,6 +448,7 @@
       font-size: 9px;
       line-height: 1.08;
       text-align: center;
+      width: 100%;
     }
 
     .critter-card:hover .critter-name {
@@ -455,7 +456,13 @@
     }
 
     .method {
+      width: 100%;
+      background: #ffffff80;
+      color: var(--purple);
       font-style: italic;
+      text-transform: uppercase;
+      padding: 2px 0;
+      font-size: 9px;
     }
 
     .current-line {
@@ -604,6 +611,14 @@
       border-radius: 18px;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.13);
+      padding: 1em;
+
+      & div {
+        display: flex;
+        gap: 1em;
+        width: 100%;
+        text-align: center;
+      }
     }
 
     .detail-image {
@@ -627,14 +642,23 @@
     }
 
     .detail-label {
-      display: block;
+      display: flex;
+      flex-direction: column;
       margin-bottom: 2px;
       color: var(--muted);
       font-size: 12px;
+      width: 30%;
+      gap: 3px;
     }
 
     .detail-value {
-      font-weight: 800;
+      font-weight: normal;
+      color: #fff;
+
+      & i {
+        opacity: 0.5;
+        display: block;
+      }
     }
 
     .modal-actions {
@@ -691,9 +715,11 @@
 
     .food {
       display: inline-flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 4px;
+      padding-top: 3px;
     }
 
     .food-img {
@@ -707,6 +733,7 @@
     .detail-food {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
     }
 
@@ -746,6 +773,41 @@
     .unlocked-row input {
       width: 18px;
       height: 18px;
+    }
+
+    .weekly-schedule-list {
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .weekly-schedule-row {
+      display: grid;
+      grid-template-columns: 5.5rem minmax(5rem, 1fr) minmax(8rem, 1.4fr);
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .weekly-schedule-row.today {
+      background: rgba(56, 108, 84, 0.1);
+      border-radius: 0.75rem;
+      padding: 0.45rem 0.6rem;
+    }
+
+    .schedule-bar {
+      position: relative;
+      display: block;
+      height: 0.65rem;
+      border-radius: 999px;
+      background: rgba(31, 41, 55, 0.12);
+      overflow: hidden;
+    }
+
+    .schedule-bar-slot {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      border-radius: 999px;
+      background: var(--slot-colour, #386c54);
     }
 
     @media (max-width: 900px) {
@@ -841,10 +903,6 @@
         min-height: 66px;
       }
 
-      .critter-card {
-        padding: 6px 5px;
-      }
-
       .critter-img {
         width: 52px;
         height: 43px;
@@ -884,28 +942,28 @@
           <h1>Critter Schedule</h1>
         </div>
       </div>
-    
+
       <div class="top-actions">
         <button class="hidden-button" id="openHiddenButton" type="button">
           ✦ Critters <span id="hiddenCount">0</span>
         </button>
-    
+
         <button class="hidden-button" id="openUnlockedButton" type="button">
           ✦ Areas <span id="unlockedCount">0</span>
         </button>
       </div>
     </header>
-    
+
     <section class="day-nav-row">
       <nav class="tabs" id="dayTabs" aria-label="Day tabs"></nav>
     </section>
-    
+
     <section class="schedule-shell" aria-label="Critter schedule">
       <div class="schedule-scroll" id="scheduleScroll">
         <div id="scheduleGrid" class="schedule-grid"></div>
       </div>
     </section>
-    
+
     <p class="note">
       Schedule resets daily at 12:00 AM local time. Obtained critters are
       remembered in this browser for 30 days.

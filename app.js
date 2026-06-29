@@ -245,9 +245,9 @@ function renderLane(lane, col) {
         <div class="critter-slot${fedClass}" style="top:${top}%; height:${height}%;">
           <button class="critter-card" type="button" data-critter-id="${escapeHtml(critter.id)}">
             <img class="critter-img" src="${escapeHtml(critter.image)}" alt="${escapeHtml(critter.name)}" loading="lazy" />
-            <span class="critter-name">${escapeHtml(critter.name)}</span>
+            <span class="method">${escapeHtml(critter.approachMethod)}</span>
             <span class="critter-meta">
-              <span class="method">${escapeHtml(critter.approachMethod)}</span>
+            <span class="critter-name">${escapeHtml(critter.name)}</span>
               <span class="food">${renderFoodImage(critter)}${escapeHtml(critter.favouriteFood)}</span>
             </span>
           </button>
@@ -362,11 +362,19 @@ function getTimeColumnWidth() {
   return parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--time-col")) || 78;
 }
 
+function getApproachMethodLabel(method) {
+  switch (method) {
+    case "RLGL":
+      return "Red Light, Green Light";
+    default:
+      return method;
+  }
+}
+
 function openCritterModal(critterId) {
   const critter = getCritterById(critterId);
   if (!critter) return;
 
-  const scheduleText = critter.schedule[state.activeDay] || "n/a";
   const isTodaySchedule = state.activeDay === state.todayKey;
   const fedToday = isFedToday(critter.id, state.activeDay);
 
@@ -375,15 +383,18 @@ function openCritterModal(critterId) {
     <div class="critter-detail">
       <div class="detail-image-wrap">
         <img class="detail-image" src="${escapeHtml(critter.image)}" alt="${escapeHtml(critter.name)}" />
+        <div>
+          <p class="detail-label">Location<span class="detail-value"><i>${escapeHtml(critter.area)}</i> ${escapeHtml(critter.location)}</span></p>
+          <p class="detail-label">Favourite Food<span class="detail-value detail-food">${renderFoodImage(critter)}${escapeHtml(critter.favouriteFood)}</span></p>
+          <p class="detail-label">Approach Method<span class="detail-value">${escapeHtml(getApproachMethodLabel(critter.approachMethod))}</span></p>
+        </div>
       </div>
-      <div class="detail-list">
-        <div class="detail-row"><span class="detail-label">Area</span><span class="detail-value">${escapeHtml(critter.area)}</span></div>
-        <div class="detail-row"><span class="detail-label">Location</span><span class="detail-value">${escapeHtml(critter.location)}</span></div>
-        <div class="detail-row"><span class="detail-label">Favourite Food</span><span class="detail-value detail-food">${renderFoodImage(critter)}${escapeHtml(critter.favouriteFood)}</span></div>
-        <div class="detail-row"><span class="detail-label">Approach Method</span><span class="detail-value">${escapeHtml(critter.approachMethod)}</span></div>
-        <div class="detail-row"><span class="detail-label">${DAY_LABELS[state.activeDay]} Schedule</span><span class="detail-value">${escapeHtml(scheduleText)}</span></div>
+
+      <div class="detail-list weekly-schedule-list">
+        ${renderWeeklyScheduleRows(critter)}
       </div>
     </div>
+
     <div class="modal-actions">
       ${isTodaySchedule ? `<button class="primary-button" type="button" data-feed-critter="${escapeHtml(critter.id)}">${fedToday ? "✓ Fed" : "🍽 Feed"}</button>` : ""}
       <button class="primary-button" type="button" data-hide-critter="${escapeHtml(critter.id)}">✓ Obtained</button>
@@ -391,6 +402,44 @@ function openCritterModal(critterId) {
     </div>
   `;
   openModal(els.critterModal);
+}
+
+function renderWeeklyScheduleRows(critter) {
+  return DAYS
+    .filter((day) => day !== "sunday")
+    .concat("sunday")
+    .map((day) => {
+      const scheduleText = critter.schedule?.[day] || "n/a";
+      const todayClass = day === state.todayKey ? " today" : "";
+
+      return `
+        <div class="detail-row weekly-schedule-row${todayClass}">
+          <span class="detail-label">${DAY_LABELS[day]}</span>
+          <span class="detail-value">${escapeHtml(scheduleText)}</span>
+          <span class="schedule-bar" aria-hidden="true">
+            ${renderScheduleBarSlots(scheduleText)}
+          </span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderScheduleBarSlots(scheduleText) {
+  const slots = parseScheduleSlots(scheduleText);
+
+  if (!slots.length) return "";
+
+  return slots
+    .map((slot) => {
+      const start = Math.max(0, Math.min(slot.start, 1440));
+      const end = Math.max(0, Math.min(slot.end, 1440));
+      const left = minutesToPercent(start);
+      const width = minutesToPercent(end - start);
+
+      return `<span class="schedule-bar-slot" style="left:${left}%; width:${width}%;"></span>`;
+    })
+    .join("");
 }
 
 function openHiddenModal() {
