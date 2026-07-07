@@ -78,7 +78,7 @@ window.DDLV_CRITTERS = [
   // Eternity Isle
   c("classic-capybara", "Classic Capybara", "Classic Capybara.png", "Eternity Isle", "The Grasslands", "Cabbage", "Approach", { sunday: all, monday: all, tuesday: all, wednesday: all, thursday: all, friday: all, saturday: all }),
   c("blue-striped-capybara", "Blue Striped Capybara", "Blue Striped Capybara.png", "Eternity Isle", "The Grove", "Cabbage", "Approach", { sunday: na, monday: am, tuesday: am, wednesday: am, thursday: all, friday: na, saturday: all }),
-  c("toon-capybara", "Toon Capybara", "Toon Capybara.png", "Eternity Isle", "The Grove", "Cabbage", "Approach", { sunday: all, monday: all, tuesday: all, wednesday: all, thursday: all, friday: all, saturday: all }),
+  c("toon-capybara", "Toon Capybara", "Toon Capybara.png", "Eternity Isle", "The Grove", "Cabbage", "Approach", { sunday: all, monday: all, tuesday: all, wednesday: all, thursday: all, friday: all, saturday: all }, { quest: "The Spark of Imagination" }),
   c("gray-spotted-capybara", "Gray Spotted Capybara", "Gray Spotted Capybara.png", "Eternity Isle", "The Lagoon", "Cabbage", "Approach", { sunday: all, monday: pm, tuesday: pm, wednesday: pm, thursday: na, friday: all, saturday: na }),
   c("red-white-capybara", "Red and White Striped Capybara", "Red and White Striped Capybara.png", "Eternity Isle", "The Lagoon", "Cabbage", "Approach", { sunday: na, monday: na, tuesday: na, wednesday: na, thursday: na, friday: na, saturday: all }),
   c("black-white-capybara", "Black and White Capybara", "Black and White Capybara.png", "Eternity Isle", "The Promenade", "Cabbage", "Approach", { sunday: pm, monday: na, tuesday: all, wednesday: na, thursday: all, friday: pm, saturday: pm }),
@@ -88,10 +88,10 @@ window.DDLV_CRITTERS = [
   c("green-white-cobra", "Green and White Striped Cobra", "Green and White Striped Cobra.png", "Eternity Isle", "The Borderlands", "Egg", "RLGL", { sunday: na, monday: na, tuesday: na, wednesday: na, thursday: all, friday: na, saturday: na }),
   c("yellow-purple-cobra", "Yellow and Purple Striped Cobra", "Yellow and Purple Striped Cobra.png", "Eternity Isle", "The Borderlands", "Egg", "RLGL", { sunday: pm, monday: na, tuesday: all, wednesday: pm, thursday: pm, friday: na, saturday: all }),
   c("blue-red-cobra", "Blue and Red Striped Cobra", "Blue and Red Striped Cobra.png", "Eternity Isle", "The Wastes", "Egg", "RLGL", { sunday: all, monday: pm, tuesday: pm, wednesday: na, thursday: all, friday: na, saturday: pm }),
-  c("toon-cobra", "Toon Cobra", "Toon Cobra.png", "Eternity Isle", "The Wastes", "Egg", "RLGL", { sunday: all, monday: all, tuesday: all, wednesday: all, thursday: all, friday: all, saturday: all }),
+  c("toon-cobra", "Toon Cobra", "Toon Cobra.png", "Eternity Isle", "The Wastes", "Egg", "RLGL", { sunday: all, monday: all, tuesday: all, wednesday: all, thursday: all, friday: all, saturday: all }, { quest: "The Spark of Imagination" }),
 
   c("classic-monkey", "Classic Monkey", "Classic Monkey.png", "Eternity Isle", "The Docks", "5-Star Dessert", "Tag", { sunday: all, monday: all, tuesday: all, wednesday: all, thursday: all, friday: all, saturday: all }),
-  c("toon-monkey", "Toon Monkey", "Toon Monkey.png", "Eternity Isle", "The Docks", "5-Star Dessert", "Tag", { sunday: all, monday: all, tuesday: all, wednesday: all, thursday: all, friday: all, saturday: all }),
+  c("toon-monkey", "Toon Monkey", "Toon Monkey.png", "Eternity Isle", "The Docks", "5-Star Dessert", "Tag", { sunday: all, monday: all, tuesday: all, wednesday: all, thursday: all, friday: all, saturday: all }, { quest: "The Spark of Imagination" }),
   c("black-brown-monkey", "Black and Brown Monkey", "Black and Brown Monkey.png", "Eternity Isle", "The Courtyard", "5-Star Dessert", "Tag", { sunday: pm, monday: na, tuesday: pm, wednesday: all, thursday: pm, friday: na, saturday: all }),
   c("beige-monkey", "Beige Monkey", "Beige Monkey.png", "Eternity Isle", "The Ruins", "5-Star Dessert", "Tag", { sunday: all, monday: pm, tuesday: na, wednesday: pm, thursday: all, friday: pm, saturday: na }),
   c("black-gray-monkey", "Black and Gray Monkey", "Black and Gray Monkey.png", "Eternity Isle", "The Ruins", "5-Star Dessert", "Tag", { sunday: na, monday: na, tuesday: all, wednesday: na, thursday: na, friday: na, saturday: na }),
@@ -123,17 +123,17 @@ window.DDLV_CRITTERS = [
   c("true-north-goose", "True North Goose", "True North Goose.png", "Wishblossom Mountains", "Ranch Highlands", "Red Currants", "Patience", { sunday: na, monday: na, tuesday: all, wednesday: na, thursday: all, friday: na, saturday: all }),
 
   c("brown-skunk", "Brown Skunk", "Brown Skunk.png", "Wishblossom Mountains", "Paisley Park", "Button Mushroom", "RLGL", { sunday: pm, monday: pm, tuesday: na, wednesday: pm, thursday: na, friday: pm, saturday: na }),
-  c("patterned-skunk", "Patterned Skunk", "Patterned Skunk.png", "Wishblossom Mountains", "Haute Plateau", "Button Mushroom", "RLGL", { sunday: all, monday: all, tuesday: all, wednesday: all, thursday: all, friday: all, saturday: all }),
+  c("patterned-skunk", "Patterned Skunk", "Patterned Skunk.png", "Wishblossom Mountains", "Haute Plateau", "Button Mushroom", "RLGL", { sunday: all, monday: all, tuesday: all, wednesday: all, thursday: all, friday: all, saturday: all }, { weather: ["Heavy Clouds", "Rain"] }),
   c("skunk", "Skunk", "Skunk.png", "Wishblossom Mountains", "Runway River", "Button Mushroom", "RLGL", { sunday: am, monday: am, tuesday: am, wednesday: am, thursday: am, friday: am, saturday: am }),
   c("white-skunk", "White Skunk", "White Skunk.png", "Wishblossom Mountains", "Modish Marsh", "Button Mushroom", "RLGL", { sunday: pm, monday: na, tuesday: pm, wednesday: na, thursday: pm, friday: na, saturday: pm }),
 
-  c("blue-sweet-bee", "Blue Sweet Bee", "Blue Sweet Bee.png", "Wishblossom Mountains", "Hunny Falls", "Honey Coral", "Tag", { sunday: all, monday: all, tuesday: all, wednesday: all, thursday: all, friday: all, saturday: all }),
+  c("blue-sweet-bee", "Blue Sweet Bee", "Blue Sweet Bee.png", "Wishblossom Mountains", "Hunny Falls", "Honey Coral", "Tag", { sunday: all, monday: all, tuesday: all, wednesday: all, thursday: all, friday: all, saturday: all }, { weather: ["Clear", "Light Clouds"] }),
   c("pink-sweet-bee", "Pink Sweet Bee", "Pink Sweet Bee.png", "Wishblossom Mountains", "Pixie Flats", "Honey Coral", "Tag", { sunday: all, monday: all, tuesday: all, wednesday: all, thursday: all, friday: all, saturday: all }),
   c("sweet-bee", "Sweet Bee", "Sweet Bee.png", "Wishblossom Mountains", "Sundae Shores", "Honey Coral", "Tag", { sunday: "7 AM to 8 PM", monday: "7 AM to 8 PM", tuesday: "7 AM to 8 PM", wednesday: "7 AM to 8 PM", thursday: "7 AM to 8 PM", friday: "7 AM to 8 PM", saturday: "7 AM to 8 PM" }),
   c("white-sweet-bee", "White Sweet Bee", "White Sweet Bee.png", "Wishblossom Mountains", "Hundred-Acre Fields", "Honey Coral", "Tag", { sunday: "8 PM to 12 AM", monday: "8 PM to 12 AM", tuesday: "8 PM to 12 AM", wednesday: "8 PM to 12 AM", thursday: "8 PM to 12 AM", friday: "8 PM to 12 AM", saturday: "8 PM to 12 AM" })
 ];
 
-function c(id, name, imageFile, area, location, favouriteFood, approachMethod, schedule) {
+function c(id, name, imageFile, area, location, favouriteFood, approachMethod, schedule, requirements = {}) {
   return {
     id,
     name,
@@ -146,6 +146,7 @@ function c(id, name, imageFile, area, location, favouriteFood, approachMethod, s
     favouriteFoodImage: foodImg(favouriteFood),
     approachMethod,
     schedule,
+    requirements,
   };
 }
 

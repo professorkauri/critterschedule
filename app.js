@@ -232,6 +232,61 @@ function renderHeaders(groups, startCol) {
   return html;
 }
 
+function renderRequirementBadges(critter) {
+  const requirements = getCritterRequirements(critter);
+  if (!requirements.length) return "";
+
+  return `
+    <span class="slot-badges" aria-label="Special requirements">
+      ${requirements.map((requirement) => `
+        <span class="slot-badge" title="${escapeHtml(requirement.label)}" aria-label="${escapeHtml(requirement.label)}">
+          ${escapeHtml(requirement.icon)}
+        </span>
+      `).join("")}
+    </span>
+  `;
+}
+
+function getCritterRequirements(critter) {
+  const requirements = [];
+
+  if (critter?.requirements?.quest) {
+    requirements.push({
+      type: "quest",
+      icon: "✦",
+      label: `Quest: ${critter.requirements.quest}`,
+    });
+  }
+
+  const weather = Array.isArray(critter?.requirements?.weather)
+    ? critter.requirements.weather
+    : critter?.requirements?.weather
+      ? [critter.requirements.weather]
+      : [];
+
+  weather.forEach((weatherName) => {
+    requirements.push({
+      type: "weather",
+      icon: getWeatherIcon(weatherName),
+      label: `${weatherName}`,
+    });
+  });
+
+  return requirements;
+}
+
+function getWeatherIcon(weatherName) {
+  const key = String(weatherName || "").toLowerCase();
+
+  if (key.includes("rain")) return "☔";
+  if (key.includes("storm")) return "⛈";
+  if (key.includes("snow")) return "❄";
+  if (key.includes("fog")) return "🌫";
+  if (key.includes("sun") || key.includes("clear")) return "☀";
+
+  return "☁";
+}
+
 function renderLane(lane, col) {
   const slotHtml = lane.critters.map((critter) => {
     const slots = parseScheduleSlots(critter.schedule[state.activeDay]);
@@ -244,10 +299,11 @@ function renderLane(lane, col) {
       return `
         <div class="critter-slot${fedClass}" style="top:${top}%; height:${height}%;">
           <button class="critter-card" type="button" data-critter-id="${escapeHtml(critter.id)}">
+            ${renderRequirementBadges(critter)}
             <img class="critter-img" src="${escapeHtml(critter.image)}" alt="${escapeHtml(critter.name)}" loading="lazy" />
             <span class="method">${escapeHtml(critter.approachMethod)}</span>
             <span class="critter-meta">
-            <span class="critter-name">${escapeHtml(critter.name)}</span>
+              <span class="critter-name">${escapeHtml(critter.name)}</span>
               <span class="food">${renderFoodImage(critter)}${escapeHtml(critter.favouriteFood)}</span>
             </span>
           </button>
@@ -371,6 +427,25 @@ function getApproachMethodLabel(method) {
   }
 }
 
+function renderCritterRequirements(critter) {
+  const requirements = getCritterRequirements(critter);
+  if (!requirements.length) return "";
+
+  return `
+    <p class="detail-label">
+      Requirements
+      <span class="detail-value requirement-list">
+        ${requirements.map((requirement) => `
+          <span class="requirement-pill">
+            <span aria-hidden="true">${escapeHtml(requirement.icon)}</span>
+            ${escapeHtml(requirement.label)}
+          </span>
+        `).join("")}
+      </span>
+    </p>
+  `;
+}
+
 function openCritterModal(critterId) {
   const critter = getCritterById(critterId);
   if (!critter) return;
@@ -387,6 +462,7 @@ function openCritterModal(critterId) {
           <p class="detail-label">Location<span class="detail-value"><i>${escapeHtml(critter.area)}</i> ${escapeHtml(critter.location)}</span></p>
           <p class="detail-label">Favourite Food<span class="detail-value detail-food">${renderFoodImage(critter)}${escapeHtml(critter.favouriteFood)}</span></p>
           <p class="detail-label">Approach Method<span class="detail-value">${escapeHtml(getApproachMethodLabel(critter.approachMethod))}</span></p>
+          ${renderCritterRequirements(critter)}
         </div>
       </div>
 
